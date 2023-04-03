@@ -2,14 +2,14 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from dtms_client.DMTSClient import DTMSClient
+from dtms_client.DTMSClient import DTMSClient
 import argparse
 
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
-client = DTMSClient("https://dtms.shahriyarshawon.xyz/")
+client = DTMSClient("http://localhost:8000")
 bot = commands.Bot(command_prefix="./", intents=intents)
 
 
@@ -23,6 +23,9 @@ async def on_ready():
 async def getcourse(ctx, *, course_number: str):
     print(f"Getting class {course_number}")
     drexel_class = client.get_class(course_number)
+    if drexel_class is None:
+        await ctx.send(f"{course_number} does not exist")
+        return
     embed = discord.Embed(
         title=drexel_class.number,
         description=drexel_class.name,
@@ -49,7 +52,7 @@ async def prereqs(ctx, *, course_number: str):
 async def postreqs(ctx, *args):
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-c", "--course", help="Course to find postreqs for. ex MATH 201"
+        "course", help="Course to find postreqs for. ex MATH 201"
     )
     parser.add_argument(
         "-s", "--subject-filter", help="Subject to filter results by. ex1 CS or ECE"
@@ -60,7 +63,7 @@ async def postreqs(ctx, *args):
         return
     print(f"Getting class {args.course}")
     postreqs = client.get_postreqs_for_class(
-        args.course, subject_filter=args.subject_filter.upper()
+        args.course, subject_filter=args.subject_filter.upper() if args.subject_filter else None
     )
     postreqs_str = "\n".join(postreqs)
     await ctx.send(f"""```md\n{postreqs_str}```""")
@@ -69,6 +72,7 @@ async def postreqs(ctx, *args):
 @bot.command()
 async def tmssearch(ctx, term: str, *args):
     parser = argparse.ArgumentParser()
+    parser.add_argument("--course")
     parser.add_argument("--college")
     parser.add_argument("--subject")
     parser.add_argument("--credit-hours")
@@ -78,6 +82,7 @@ async def tmssearch(ctx, term: str, *args):
     args = parser.parse_args(args)
     courses = client.get_classes_for_term(
         term,
+        course_number=args.course,
         college=args.college,
         subject=args.subject,
         credit_hours=args.credit_hours,

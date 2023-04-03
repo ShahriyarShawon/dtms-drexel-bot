@@ -9,7 +9,7 @@ packages = [{include = "dtms_drexel_bot"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 discord-py = "^2.2.2"
-dtms-client = "^0.1.0"
+dtms-client = {path = "../dtms-client", develop = true}
 python-dotenv = "^1.0.0"
 
 
